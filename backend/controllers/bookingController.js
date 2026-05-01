@@ -29,6 +29,56 @@ exports.checkAvailability = (req, res) => {
   });
 };
 
+exports.findNextSlot = (req, res) => {
+
+  const { start, duration } = req.body;
+
+  // 1️⃣ Get all appointments sorted
+  db.query(
+    "SELECT * FROM appointments ORDER BY start_time",
+    (err, appointments) => {
+
+      if (err) return res.status(500).json(err);
+
+      let current = Math.max(start, OPENING_TIME);
+
+      const durationMs = duration * 60000;
+
+      // 2️⃣ Loop through appointments
+      for (let appt of appointments) {
+
+        let reqEnd = current + durationMs;
+
+        // If fits before this appointment → RETURN
+        if (reqEnd <= appt.start_time) {
+          return res.json({
+            available: false,
+            nextAvailable: current
+          });
+        }
+
+        // If overlaps → jump to end of this appointment
+        if (current < appt.end_time && reqEnd > appt.start_time) {
+          current = appt.end_time;
+        }
+      }
+
+      // 3️⃣ Final check after last appointment
+      if (current + durationMs <= CLOSING_TIME) {
+        return res.json({
+          available: false,
+          nextAvailable: current
+        });
+      }
+
+      return res.json({
+        available: false,
+        message: "No slots available today"
+      });
+    }
+  );
+};
+
 // 📅 Create booking
 exports.createBooking = (req, res) => {
   const { customerName, start, duration } = req.body;
