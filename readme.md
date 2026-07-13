@@ -1,6 +1,6 @@
-# GoldTouch Cleaning Service Booking System
+# Smart Scheduler Library
 
-A simple full stack booking system for a cleaning service company that allows customers to book services based on **service type, size, and dirt level**.
+A simple full stack booking system for a cleaning service that allows customers to book services based on **service type, size, and dirt level**.
 
 ---
 
