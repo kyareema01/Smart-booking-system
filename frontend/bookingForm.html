@@ -1,98 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>GoldTouch Booking</title>
 
   <style>
-    /* RESET */
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      /* background: #f9f9f9;
-       */
-       background: #f1c63a;
-    }
-
-    /* CENTER */
-    .container {
-      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0a192f;
+      color: #ccd6f6;
       display: flex;
       justify-content: center;
-      align-items: center;
+      padding: 50px;
     }
 
-    /* CARD */
     .card {
-      background: white;
-      padding: 40px;
-      width: 350px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      text-align: center;
+      background: #112240;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      width: 400px;
+      border: 1px solid rgba(100, 255, 218, 0.1);
+
     }
 
-    /* TITLE */
-    h1 {
-      margin: 0;
-      margin-bottom: 5px;
+    h2 {
+      color: #64ffda;
+      margin-top: 0;
     }
 
-    .gold {
-      color: #C9A227;
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      color: #8892b0;
+      font-size: 0.9rem;
     }
 
-    .subtitle {
-      color: #777;
-      font-size: 14px;
-      margin-bottom: 20px;
-    }
-
-    /* INPUTS */
-    input, select {
+    input,
+    select {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      outline: none;
-    }
-
-    input:focus, select:focus {
-      border-color: #C9A227;
-      box-shadow: 0 0 5px rgba(201,162,39,0.3);
-    }
-
-    /* BUTTON */
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #C9A227;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #233554;
+      background: #0a192f;
       color: white;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #64ffda;
+      color: #0a192f;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      border-radius: 5px;
       font-weight: bold;
       cursor: pointer;
+      border-bottom: 10px;
+      margin-top: 20px;
+      transition: 0.3s;
     }
 
     button:hover {
-      background: #b8961f;
+      background-color: #52e0c4;
     }
 
-    /* MESSAGE */
-    .message {
-      margin-top: 15px;
-      font-size: 14px;
+    #resultBox {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      display: none;
+      background: #233554;
     }
 
-    .success { color: green; }
-    .error { color: red; }
-    .warning { color: #C9A227; }
+    .success {
+      border-left: 4px solid #64ffda;
+    }
 
-    /* PRICE BOX */
+    .error {
+      color: red;
+    }
+
+    .warning {
+      border-left: 4px solid #ffd700;
+    }
+
     .price-box {
-      background: #faf7ea;
+      background: #233554;
       padding: 10px;
       border-radius: 8px;
       margin-top: 10px;
@@ -102,12 +98,9 @@
 </head>
 
 <body>
-
-<div class="container">
   <div class="card">
-
-    <h1><span class="gold">Gold</span>Touch</h1>
-    <p class="subtitle">Book your cleaning service</p>
+    <h2>Smart Scheduler Engine</h2>
+    <p style="color: #8892b0; font-size: 0.9rem;">Simulating constraints for March 7th, 2026.</p>
 
     <!-- SERVICE -->
     <select id="service">
@@ -117,132 +110,175 @@
       <option value="rug">🧼 Rug Cleaning</option>
     </select>
 
-    <!-- TIME -->
-    <input type="time" id="time">
+    <select id="dirt">
+      <option value="">Select Dirt Level</option>
+      <option value="light">Light Dirt</option>
+      <option value="moderate">Moderate Dirt</option>
+      <option value="heavy">Heavy Dirt</option>
+    </select>
+    <!-- PRICE DISPLAY  -->
+    <div class="price-box" id="priceBox"></div>
 
-    <!-- PRICE DISPLAY -->
-    <div class="price-box" id="priceBox">
-      Select a service to see price
-    </div>
+    <label>Requested Start Time:</label>
+    <input type="time" id="timeInput" value="10:00">
 
-    <!-- BUTTONS -->
+    <label>Duration (Minutes):</label>
+    <input type="number" id="durationInput" value="45">
+
     <button onclick="checkAvailability()">Check Availability</button>
+
+
+    <div id="resultBox"></div>
     <button onclick="book()">Book Now</button>
-
-    <!-- RESULT -->
-    <p id="message" class="message"></p>
-
   </div>
-</div>
-
-<script>
-  const SERVICES = {
-    house: { duration: 45, price: 15000 },
-    couch: { duration: 60, price: 5000 },
-    rug: { duration: 45, price: 3000 }
-  };
-
-  let selectedService = null;
 
 
-  // UPDATE PRICE
-  document.getElementById('service').addEventListener('change', function() {
-    selectedService = SERVICES[this.value];
+  <script>
+    // HTML Ele
+    let services = document.getElementById('service');
+    let dirt = document.getElementById('dirt');
+    let priceBox = document.getElementById('priceBox');
+    let duration = document.getElementById('durationInput');
 
-    if (selectedService) {
-      document.getElementById('priceBox').innerHTML =
-        `Price: ₦${selectedService.price}<br>Duration: ${selectedService.duration} type`;
-    }
-  });
-
-  function showMessage(text, type) {
-    const msg = document.getElementById('message');
-    msg.className = "message " + type;
-    msg.innerText = text;
-  }
-
-  function getStartTime() {
-    const time = document.getElementById('time').value;
-    return new Date(`2026-03-07T${time}:00`).getTime();
-  }
-
-  // CHECK AVAILABILITY
-  async function checkAvailability() {
-
-    if (!selectedService) {
-      return showMessage("Select a service first", "error");
-    }
-
-    const start = getStartTime();
-
-    const res = await fetch("http://localhost:5000/api/bookings/check", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
+    // Data Model
+    const SERVICES = {
+      house: {
+        light: { price: 3000 },
+        moderate: { price: 4500 },
+        heavy: { price: 6000 }
       },
-      body: JSON.stringify({
-        start,
-        duration: selectedService.duration
-      })
-    });
+      couch: {
+        light: { price: 3000 },
+        moderate: { price: 4000 },
+        heavy: { price: 5000 }
+      },
+      rug: {
+        light: { price: 2000 },
+        moderate: { price: 3000 },
+        heavy: { price: 4000 }
+      }
+    };
 
-    const data = await res.json();
 
-    if (data.available) {
-      showMessage("✅ Slot Available!", "success");
-    } else {
-      showMessage("❌ Not available, finding next slot...", "warning");
+    // -- Frontend Auth --
 
-      const next = await fetch("http://localhost:5000/api/bookings/next-slot", {
+    // UPDATE PRICE
+
+    let currentDuration;
+    
+    function updateDisplay() {
+      const serviceKey = services.value
+      const dirtKey = dirt.value
+      currentDuration = parseInt(duration.value) || 0
+
+      if (!serviceKey || !dirtKey) return
+
+      // selectedService = SERVICE.house.light (example)
+      let selectedService = SERVICES[serviceKey]?.[dirtKey]
+
+      if (!selectedService) {
+        document.getElementById('priceBox').innerHTML = "Selection not available for this dirt level";
+        return;
+      }
+
+      // console.log("Service Key:", serviceKey);
+      // console.log("Dirt Key:", dirtKey);
+      // console.log("Full Service Object:", SERVICES[serviceKey]);
+      priceBox.innerHTML =
+        // selectedService.price = (Service.house.light.price)
+        `Price: ₦${selectedService.price}<br>
+          Dirt: ${dirtKey}<br>
+        Duration: ${currentDuration}mins
+        <br><br>
+        Total: ₦${currentDuration * selectedService.price}
+      `;
+    }
+
+    services.addEventListener('change', updateDisplay)
+    dirt.addEventListener('change', updateDisplay)
+    duration.addEventListener('input', updateDisplay)
+
+    function showMessage(text, type) {
+      const msg = document.getElementById('resultBox');
+      msg.style.display = 'block'
+      msg.className = "message " + type;
+      msg.innerText = text;
+    }
+
+    function getStartTime() {
+      const time = document.getElementById('timeInput').value;
+      return new Date(`2026-03-07T${time}:00`).getTime();
+    }
+
+    // CHECK AVAILABILITY
+    async function checkAvailability() {
+
+      const start = getStartTime();
+
+      const res = await fetch("http://localhost:5000/api/bookings/check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           start,
-          duration: selectedService.duration
+          duration: currentDuration
         })
       });
 
-      const nextData = await next.json();
+      const data = await res.json();
 
-      showMessage(
-        `Next available: ${new Date(nextData.nextAvailable).toLocaleTimeString()}`,
-        "warning"
-      );
+      if (data.available) {
+        showMessage("✅ Slot Available!", "success");
+      } else {
+        showMessage("❌ Not available, finding next slot...", "warning");
+
+        const next = await fetch("http://localhost:5000/api/bookings/next-slot", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            start,
+            duration: currentDuration
+          })
+        });
+
+        const nextData = await next.json();
+
+        showMessage(
+          `Next available: ${new Date(nextData.nextAvailable).toLocaleTimeString()}`,
+          "warning"
+        );
+      }
     }
-  }
 
-  // BOOK
-  async function book() {
+    // BOOK
+    async function book() {
 
-    if (!selectedService) {
-      return showMessage("Select a service first", "error");
+      const start = getStartTime();
+
+      const res = await fetch("http://localhost:5000/api/bookings/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          customerName: "Khalifa",
+          start,
+          duration: currentDuration
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showMessage("✅ Booking Confirmed!", "success");
+      } else {
+        showMessage(data.message || "Booking failed", "error");
+      }
     }
-
-    const start = getStartTime();
-
-    const res = await fetch("http://localhost:5000/api/bookings/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        customerName: "Khalifa",
-        start,
-        duration: selectedService.duration
-      })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      showMessage("✅ Booking Confirmed!", "success");
-    } else {
-      showMessage(data.message || "Booking failed", "error");
-    }
-  }
-</script>
-
+  </script>
 </body>
+
 </html>

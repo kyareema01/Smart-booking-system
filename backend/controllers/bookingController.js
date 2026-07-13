@@ -13,6 +13,7 @@ exports.checkAvailability = (req, res) => {
     return res.json({ available: false, message: "Outside working hours" });
   }
 
+  // if req start before appt ends && req ends after appt start (clashed!!)
   const query = `
     SELECT * FROM appointments
     WHERE NOT (end_time <= ? OR start_time >= ?)
@@ -35,8 +36,7 @@ exports.findNextSlot = (req, res) => {
 
   // 1️⃣ Get all appointments sorted
   db.query(
-    "SELECT * FROM appointments ORDER BY start_time",
-    (err, appointments) => {
+    "SELECT * FROM appointments ORDER BY start_time", (err, appointments) => {
 
       if (err) return res.status(500).json(err);
 
