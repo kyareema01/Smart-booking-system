@@ -1,106 +1,40 @@
-const db = require('../db');
+const bookingService = require('../services/bookingService');
 
-const CLOSING_TIME = new Date("2026-03-07T17:00:00").getTime();
-const OPENING_TIME = new Date("2026-03-07T09:00:00").getTime();
-
-// 🔍 Check availability
-exports.checkAvailability = (req, res) => {
-  const { start, duration } = req.body;
-
-  const end = start + duration * 60000;
-
-  if (start < OPENING_TIME || end > CLOSING_TIME) {
-    return res.json({ available: false, message: "Outside working hours" });
+exports.checkAvailability = async (req, res) => {
+  try {
+    const { start, duration } = req.body;
+    const result = await bookingService.checkAvailability(start, duration);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
-
-  // if req start before appt ends && req ends after appt start (clashed!!)
-  const query = `
-    SELECT * FROM appointments
-    WHERE NOT (end_time <= ? OR start_time >= ?)
-  `;
-
-  db.query(query, [start, end], (err, results) => {
-    if (err) return res.status(500).json(err);
-
-    if (results.length > 0) {
-      return res.json({ available: false });
-    }
-
-    return res.json({ available: true });
-  });
 };
 
-exports.findNextSlot = (req, res) => {
-
-  const { start, duration } = req.body;
-
-  // 1️⃣ Get all appointments sorted
-  db.query(
-    "SELECT * FROM appointments ORDER BY start_time", (err, appointments) => {
-
-      if (err) return res.status(500).json(err);
-
-      let current = Math.max(start, OPENING_TIME);
-
-      const durationMs = duration * 60000;
-
-      // 2️⃣ Loop through appointments
-      for (let appt of appointments) {
-
-        let reqEnd = current + durationMs;
-
-        // If fits before this appointment → RETURN
-        if (reqEnd <= appt.start_time) {
-          return res.json({
-            available: false,
-            nextAvailable: current
-          });
-        }
-
-        // If overlaps → jump to end of this appointment
-        if (current < appt.end_time && reqEnd > appt.start_time) {
-          current = appt.end_time;
-        }
-      }
-
-      // 3️⃣ Final check after last appointment
-      if (current + durationMs <= CLOSING_TIME) {
-        return res.json({
-          available: false,
-          nextAvailable: current
-        });
-      }
-
-      return res.json({
-        available: false,
-        message: "No slots available today"
-      });
-    }
-  );
+exports.findNextSlot = async (req, res) => {
+  try {
+    const { start, duration } = req.body;
+    const result = await bookingService.findNextSlot(start, duration);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 };
 
-// 📅 Create booking
-exports.createBooking = (req, res) => {
-  const { customerName, start, duration } = req.body;
-  const end = start + duration * 60000;
-
-  const query = `
-    INSERT INTO appointments (customer_name, start_time, end_time)
-    VALUES (?, ?, ?)
-  `;
-
-  db.query(query, [customerName, start, end], (err) => {
-    if (err) return res.status(500).json(err);
-
-    res.json({ message: "✅ Booking created" });
-  });
+exports.createBooking = async (req, res) => {
+  try {
+    const { customerName, start, duration } = req.body;
+    await bookingService.createBooking(customerName, start, duration);
+    return res.json({ message: "✅ Booking created" });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 };
 
-// 📖 Get all bookings
-exports.getBookings = (req, res) => {
-  db.query("SELECT * FROM appointments ORDER BY start_time", (err, results) => {
-    if (err) return res.status(500).json(err);
-
-    res.json(results);
-  });
+exports.getBookings = async (req, res) => {
+  try {
+    const bookings = await bookingService.getBookings();
+    return res.json(bookings);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 };
